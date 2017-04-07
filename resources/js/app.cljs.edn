@@ -1,0 +1,3 @@
+{:require  [chess3man-web.app]
+ :init-fns [chess3man-web.app/init]
+ :compiler-options {:asset-path "js/app.out"}}
