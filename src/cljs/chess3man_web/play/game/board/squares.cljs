@@ -24,31 +24,30 @@
 
 (defn segment-starting-coor [file radius] (map #(* radius %) (let [a (file-angle file)] [(sin a) (cos a)])))
 
-(defn paths-data [start-file radius] (take 24 (iterate (fn [given] (let [now (inc (first given))]
+(defn paths-data [radius] (take 24 (iterate (fn [given] (let [now (inc (first given))]
                                                                      [now (last given)
                                                                       (segment-starting-coor (inc now) radius)]))
-                                                       [start-file
-                                                        (segment-starting-coor start-file radius)
-                                                        (segment-starting-coor (inc start-file) radius)])))
+                                                       [0 (segment-starting-coor 0 radius)
+                                                        (segment-starting-coor 1 radius)])))
 
-(defn paths-data-strings [start-file radius] (map (fn [x] [(first x)
+(defn paths-data-strings [radius] (map (fn [x] [(first x)
                                                            (str "M" (first (second x)) "," (second (second x))
                                                                 " A" radius "," radius " 0 0 0 "
                                                                 (first (last x)) "," (second (last x)))])
-                                                  (paths-data start-file radius)))
+                                                  (paths-data radius)))
 
-(defn paths-rank [start-file radius rank stroke-width pos-to-color]
+(defn paths-rank [radius rank stroke-width pos-to-color]
   (map (fn [x] [:path {:d (second x) :fill "none"
                        :id (path-id [rank (first x)])
                        :key (path-id [rank (first x)])
                        :stroke-width stroke-width
                        :stroke @(pos-to-color [rank (mod (first x) 24)])}])
-       (paths-data-strings start-file radius)))
+       (paths-data-strings radius)))
 
 (defn paths
-  [start-file center-radius outer-radius pos-to-color]
+  [center-radius outer-radius pos-to-color]
   (let [inter-radius (- outer-radius center-radius)
         stroke-width (/ inter-radius 6)
         half-width (/ stroke-width 2)]
-    (vec (map #(paths-rank start-file (+ center-radius half-width (* stroke-width %)) (- 5 %)
+    (vec (map #(paths-rank (+ center-radius half-width (* stroke-width %)) (- 5 %)
                            stroke-width pos-to-color) (range 6)))))
