@@ -14,6 +14,8 @@
 
 (defonce pi (aget js/Math "PI"))
 
+(defonce clicked (r/atom nil))
+
 (defn sin [x] (.sin js/Math x))
 
 (defn cos [x] (.cos js/Math x))
@@ -41,7 +43,8 @@
                        :id (path-id [rank (first x)])
                        :key (path-id [rank (first x)])
                        :stroke-width stroke-width
-                       :stroke @(pos-to-color [rank (mod (first x) 24)])}])
+                       :stroke @(pos-to-color [rank (first x)])
+                       :on-click (fn [] (swap! clicked #(if (= [rank (first x)] %) nil [rank (first x)])) )}])
        (paths-data-strings radius)))
 
 (defn paths

@@ -18,22 +18,44 @@
                                                      dark-color light-color)
                                                   sq/all-ranks-and-files)))
 
+(defonce board-rtl true)
+
+(def main-board-rot (r/atom 3))
+
+(defn to-game-file [board-file] (if board-rtl (- 24 (mod (- board-file @main-board-rot) 24))
+                                    (mod (- board-file @main-board-rot) 24)))
+
+(defn to-board-file [game-file] (if board-rtl (to-game-file game-file) (mod (+ to-board-file @main-board-rot) 24)))
+
 (def main-board-colors (r/atom (give-normal-colors true)))
 
 (defn set-normal-colors [even-dark] (reset! main-board-colors (give-normal-colors even-dark)))
 
+(defn set-color [pos color] (swap! main-board-colors assoc pos color))
+
 (defn main-board-color [pos] (r/cursor main-board-colors [pos]))
 
-(def the-paths (vec (concat [:g {:transform "translate(425,425)"}] (paths 130 415 main-board-color))))
+(def main-moats (r/atom [true true true]))
+
+(def pionek-prefix "http://archiet.platinum.edu.pl/3manchess/res/pionki/Chess_")
+(def pionek-typ {:bishop "b" :king "k" :knight "n" :pawn "p" :queen "q" :rook "r"})
+(def pionek-kolor-list ["l" "g" "d"])
+(def pionek-kolor-map {:white "l" :gray "g" :black "k"})
+(def pionek-suffix "t60.png")
+(defn pionek-url [typ kolor] (str pionek-prefix (pionek-typ typ) (pionek-kolor-map kolor) pionek-suffix))
+
+(def main-board-figs (r/atom {}))
+
+(defn main-board-pos [pos] (r/cursor main-board-figs [pos]))
+
+(def the-paths (vec (into [:g {:transform "translate(425,425)"}] (paths 130 415 main-board-color))))
 
 (defn some-component []
   [:div
-   "góra gen"
    [:svg {:width 850 :height 850 :viewBox "0 0 850 850"}
-    (into the-paths [[:text {:x 0 :y 0} "A tu numer gry"]
-                     [:image {:x 140 :y 0 :xlinkHref
-                              "http://archiet.platinum.edu.pl/3manchess/res/pionki/Chess_klt60.png"}]])]
-   "dół gen"])
+    (into the-paths [[:text {:x 0 :y 0} "A kliknięte" (str @sq/clicked)]
+                     [:image {:x 150 :y 0 :xlinkHref (pionek-url :king :white)}]])]
+   [:div {:style {:float :right}} "Kliknięte " (str @sq/clicked) [:br]]])
 
 (defn init []
   (r/render-component [some-component]
