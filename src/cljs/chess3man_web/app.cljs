@@ -30,13 +30,11 @@
   [:div
    "góra gen"
    [:svg {:width 850 :height 850 :viewBox "0 0 850 850"}
-    (into the-paths [[:text {:x 0 :y 0} "A tu numer gry"]])]
+    (into the-paths [[:text {:x 0 :y 0} "A tu numer gry"]
+                     [:image {:x 140 :y 0 :xlinkHref
+                              "http://archiet.platinum.edu.pl/3manchess/res/pionki/Chess_klt60.png"}]])]
    "dół gen"])
 
-(defn calling-component []
-  [:div "Parent component"
-   [some-component]])
-
 (defn init []
-  (r/render-component [calling-component]
+  (r/render-component [some-component]
                             (.getElementById js/document "container")))
