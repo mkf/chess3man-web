@@ -1,10 +1,8 @@
 (ns chess3man-web.play.game.board.squares
-  (:require [cljs.spec :as s]
-            [reagent.core :as r]))
+  (:require [schema.core :as s]
+            [reagent.core :as r]
+            [clj3manchess.engine.pos :as p :refer [Pos Rank File rank file]]))
 ;;                                        ;[clj3manchess.engine.pos :refer [rank]]))
-(defn rank [pos] (first pos))
-(defn file [pos] (last pos))
-
 (def all-ranks-and-files
   (->> (range 6)
        (map (fn [rank] (->> (range 24)
@@ -20,9 +18,9 @@
 
 (defn cos [x] (.cos js/Math x))
 
-(defn file-angle [file] (/ (* file pi) 12))
+(s/defn file-angle :- s/Num [file :- File] (/ (* file pi) 12))
 
-(defn path-id [pos] (str "r" (first pos) "f" (second pos)))
+(s/defn path-id :- s/String [pos :- Pos] (str "r" (rank pos) "f" (file pos)))
 
 (defn segment-starting-coor [file radius] (map #(* radius %) (let [a (file-angle file)] [(sin a) (cos a)])))
 

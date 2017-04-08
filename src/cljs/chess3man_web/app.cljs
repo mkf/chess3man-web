@@ -1,5 +1,6 @@
 (ns chess3man-web.app
   (:require [reagent.core :as r]
+            [clj3manchess.engine.vectors :as vec]
             [chess3man-web.play.game.board.squares :as sq :refer [paths]]))
             ;;[clj3manchess.engine.pos :refer [rank]]))
 
@@ -55,7 +56,7 @@
    [:svg {:width 850 :height 850 :viewBox "0 0 850 850"}
     (into the-paths [[:text {:x 0 :y 0} "A kliknięte" (str @sq/clicked)]
                      [:image {:x 150 :y 0 :xlinkHref (pionek-url :king :white)}]])]
-   [:div {:style {:float :right}} "Kliknięte " (str @sq/clicked) [:br]]])
+   [:div {:style {:float :right}} "Kliknięte " (str @sq/clicked) (str (vec/addvec {:inward true} [1 1])) [:br]]])
 
 (defn init []
   (r/render-component [some-component]
