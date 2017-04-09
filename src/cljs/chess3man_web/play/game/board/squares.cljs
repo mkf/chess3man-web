@@ -18,6 +18,8 @@
 (s/defn path-id :- s/Str [pos :- Pos] (str "r" (rank pos) "f" (file pos)))
 
 (defn segment-starting-coor [file radius] (map #(* radius %) (let [a (file-angle file)] [(sin a) (cos a)])))
+(defn segment-central-coor [file radius] (map #(* radius %) (let [a (file-angle file)
+                                                                  a (+ a (/ pi 24))] [(sin a) (cos a)])))
 
 (defn paths-data [radius] (take 24 (iterate (fn [given] (let [now (inc (first given))]
                                                                      [now (last given)
@@ -40,17 +42,23 @@
                        :on-click (fn [] (swap! clicked #(if (= [rank (first x)] %) nil [rank (first x)])) )}])
        (paths-data-strings radius)))
 
+
+
 (defn whatxy [center-radius outer-radius board-pos]
   (let [inter-radius (- outer-radius center-radius)
         stroke-width (/ inter-radius 6)
         half-width (/ stroke-width 2)
         rank (first board-pos)
-        rank (inc rank)
+        ;;rank (inc rank)
         file (second board-pos)
-        file (dec file)
+        ;;file (dec file)
         radius (+ center-radius half-width (* stroke-width (- 5 rank)))
-        angle (file-angle file)
-        angle (+ angle (/ pi 24))] {:x (* radius (sin angle)) :y (* radius (cos angle))}))
+        ;;angle (file-angle file)
+        xy (segment-central-coor file radius)
+        ;;angle (+ angle (/ pi 24))
+        x (first xy)
+        y (second xy)
+        ] {:x x :y y}))
 
 (defn paths
   [center-radius outer-radius pos-to-color]
