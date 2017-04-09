@@ -9,6 +9,8 @@
 
 (defonce clicked (r/atom nil))
 
+(defn click [pos] (swap! clicked #(if (= % pos) nil pos)))
+
 (defn sin [x] (.sin js/Math x))
 
 (defn cos [x] (.cos js/Math x))
@@ -54,7 +56,7 @@
                        :key (path-id [rank (first x)])
                        :stroke-width stroke-width
                        :stroke @(pos-to-color [rank (first x)])
-                       :on-click (fn [] (swap! clicked #(if (= [rank (first x)] %) nil [rank (first x)])) )}])
+                       :on-click (fn [] (click [rank (first x)]) )}])
        (paths-data-strings radius)))
 
 

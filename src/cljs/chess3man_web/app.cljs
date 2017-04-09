@@ -25,8 +25,10 @@
                                                   sq/all-ranks-and-files)))
 
 (defonce board-rtl true)
+(def rot-for-color {:white 3 :gray (+ 3 8) :black (- 3 8)})
 
 (def main-board-rot (r/atom 3))
+(defn rot-board [col] (reset! main-board-rot (get rot-for-color col)))
 
 (defn to-game-file [board-file] (if board-rtl (- 24 (mod (- board-file @main-board-rot) 24))
                                     (mod (- board-file @main-board-rot) 24)))
@@ -70,12 +72,18 @@
 
 (def main-fig-images (r/atom []))
 
-(defn main-fig-images-fn [] (reset! main-fig-images (map (fn [arr] [:image (let [_ (println arr)
-                                                  _ (println (to-board-pos (first arr)))
-                                                  {:keys [x y]} (sq/whatxy ranks-radiuses (to-board-pos (first arr)))
-                                                  xlinkhref (pionek-url (second arr))
-                                                  half-pionek-size (/ @pionek-size 2)]
-                                              {:x (- x half-pionek-size) :y (- y half-pionek-size) :xlinkHref xlinkhref}
+(defn main-fig-images-fn [] (reset! main-fig-images
+                                    (map (fn [arr] [:image
+                                                    (let [_ (println arr)
+                                                          _ (println (to-board-pos (first arr)))
+                                                          {:keys [x y]}
+                                                          (sq/whatxy ranks-radiuses (to-board-pos (first arr)))
+                                                          xlinkhref (pionek-url (second arr))
+                                                          half-pionek-size (/ @pionek-size 2)]
+                                              {:x (- x half-pionek-size)
+                                               :y (- y half-pionek-size)
+                                               :xlinkHref xlinkhref
+                                               :on-click #(sq/click (to-board-pos (first arr)))}
                                               )]) (into [] @main-board-figs))))
 (def main-fig-images-fn-react (ra/run! (main-fig-images-fn) @main-board-figs))
 
@@ -96,4 +104,5 @@
 (defn init []
   (r/render-component [some-component]
                       (.getElementById js/document "container"))
-  (main-set ::b/newgame))
+  (main-set ::b/newgame)
+  (rot-board :white))
