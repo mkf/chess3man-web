@@ -56,7 +56,7 @@
 
 (def main-board-figs (r/atom (into {} (map (fn [x] {x {:type :queen :color (nth c/colors (quot (p/file x) 8))}}) p/all-pos))))
 
-(def centerradius (r/atom 130))
+(def centerradius (r/atom 100))
 
 (def size (r/atom 850))
 (def half-size (/ @size 2) )
@@ -64,25 +64,36 @@
 (def translate-string (str "translate(" half-size "," half-size ")") )
 (def viewBox (str 0 " " 0 " " @size " " @size) )
 
-(def main-fig-images (map (fn [arr] [:image (let [_ (println arr)
+(def ranks-radiuses (sq/ranks-radiuses @centerradius half-size-10))
+
+(def pionek-size (r/atom 60))
+
+(def main-fig-images (r/atom []))
+
+(defn main-fig-images-fn [] (reset! main-fig-images (map (fn [arr] [:image (let [_ (println arr)
                                                   _ (println (to-board-pos (first arr)))
-                                                  {:keys [x y]} (sq/whatxy @centerradius half-size-10 (to-board-pos (first arr)))
-                                                  xlinkhref (pionek-url (second arr))]
-                                              {:x x :y y :xlinkHref xlinkhref}
-                                              )]) (into [] @main-board-figs)))
+                                                  {:keys [x y]} (sq/whatxy ranks-radiuses (to-board-pos (first arr)))
+                                                  xlinkhref (pionek-url (second arr))
+                                                  half-pionek-size (/ @pionek-size 2)]
+                                              {:x (- x half-pionek-size) :y (- y half-pionek-size) :xlinkHref xlinkhref}
+                                              )]) (into [] @main-board-figs))))
+(def main-fig-images-fn-react (ra/run! (main-fig-images-fn) @main-board-figs))
 
 (defn main-board-pos [pos] (r/cursor main-board-figs [pos]))
+(defn main-get [pos] @(main-board-pos pos))
+(defn main-put [pos what] (swap! main-board-figs b/put-onto-map-board pos what))
+(s/defn main-set [b :- b/Board] (reset! main-board-figs (b/fill-map-board b)))
 
-(def the-paths (vec (into [:g {:transform translate-string}] (paths @centerradius half-size-10 main-board-color))))
+(def the-paths (vec (into [:g {:transform translate-string}] (paths ranks-radiuses main-board-color))))
 
 (defn some-component []
   [:div
    [:svg {:width @size :height @size :viewBox viewBox}
-    (into (into the-paths [[:text {:x 0 :y 0} "A kliknięte" (str @sq/clicked)]
-                     [:image {:x 150 :y 0 :xlinkHref (pionek-url :king :white)}]])
-          main-fig-images) ]
+    (into (into the-paths [[:text {:x 0 :y 0} "A kliknięte" (str @sq/clicked)]])
+          @main-fig-images) ]
    [:div {:style {:float :right}} "Kliknięte " (str @sq/clicked) (str (vec/addvec {:inward true} [1 1])) [:br]]])
 
 (defn init []
   (r/render-component [some-component]
-                            (.getElementById js/document "container")))
+                      (.getElementById js/document "container"))
+  (main-set ::b/newgame))
