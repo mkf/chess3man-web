@@ -1,9 +1,9 @@
 (ns chess3man-web.play.game.board.squares
   (:require [schema.core :as s]
             [reagent.core :as r]
-            [clj3manchess.engine.pos :as p :refer [Pos Rank File rank file]]))
+            [clj3manchess.engine.pos :as p :refer [Pos Rank File rank file all-pos]]))
 ;;                                        ;[clj3manchess.engine.pos :refer [rank]]))
-(def all-ranks-and-files p/all-pos)
+(def all-ranks-and-files all-pos)
 
 (defonce pi (aget js/Math "PI"))
 
@@ -15,7 +15,7 @@
 
 (s/defn file-angle :- s/Num [file :- File] (/ (* file pi) 12))
 
-(s/defn path-id :- s/String [pos :- Pos] (str "r" (rank pos) "f" (file pos)))
+(s/defn path-id :- s/Str [pos :- Pos] (str "r" (rank pos) "f" (file pos)))
 
 (defn segment-starting-coor [file radius] (map #(* radius %) (let [a (file-angle file)] [(sin a) (cos a)])))
 
@@ -39,6 +39,18 @@
                        :stroke @(pos-to-color [rank (first x)])
                        :on-click (fn [] (swap! clicked #(if (= [rank (first x)] %) nil [rank (first x)])) )}])
        (paths-data-strings radius)))
+
+(defn whatxy [center-radius outer-radius board-pos]
+  (let [inter-radius (- outer-radius center-radius)
+        stroke-width (/ inter-radius 6)
+        half-width (/ stroke-width 2)
+        rank (first board-pos)
+        rank (inc rank)
+        file (second board-pos)
+        file (dec file)
+        radius (+ center-radius half-width (* stroke-width (- 5 rank)))
+        angle (file-angle file)
+        angle (+ angle (/ pi 24))] {:x (* radius (sin angle)) :y (* radius (cos angle))}))
 
 (defn paths
   [center-radius outer-radius pos-to-color]
