@@ -3,12 +3,7 @@
             [reagent.core :as r]
             [clj3manchess.engine.pos :as p :refer [Pos Rank File rank file]]))
 ;;                                        ;[clj3manchess.engine.pos :refer [rank]]))
-(def all-ranks-and-files
-  (->> (range 6)
-       (map (fn [rank] (->> (range 24)
-                            (map (fn [file] [rank,file])))))
-       (apply concat)
-       (into [])))
+(def all-ranks-and-files p/all-pos)
 
 (defonce pi (aget js/Math "PI"))
 
