@@ -34,7 +34,8 @@
                                     (mod (- board-file @main-board-rot) 24)))
 (defn to-game-pos [pos] [(first pos) (to-game-file (second pos))])
 
-(defn to-board-file [game-file] (if board-rtl (to-game-file game-file) (mod (+ to-board-file @main-board-rot) 24)))
+(defn to-board-file [game-file] (if board-rtl (to-game-file game-file)
+                                    (mod (+ to-board-file @main-board-rot) 24)))
 (defn to-board-pos [pos] [(first pos) (to-board-file (second pos))])
 
 (def main-board-colors (r/atom (give-normal-colors true)))
@@ -56,15 +57,17 @@
                              (str pionek-prefix (pionek-typ typ) (pionek-kolor-map kolor) pionek-suffix))
   ([fig :- (s/either f/Piece f/Pawn)] (pionek-url (:type fig) (:color fig))))
 
-(def main-board-figs (r/atom (into {} (map (fn [x] {x {:type :queen :color (nth c/colors (quot (p/file x) 8))}}) p/all-pos))))
+(def main-board-figs (r/atom (into {} (map (fn [x] {x {:type :queen
+                                                       :color (nth c/colors (quot (p/file x) 8))}})
+                                           p/all-pos))))
 
 (def centerradius (r/atom 100))
 
 (def size (r/atom 850))
-(def half-size (/ @size 2) )
-(def half-size-10 (- half-size 10) )
-(def translate-string (str "translate(" half-size "," half-size ")") )
-(def viewBox (str 0 " " 0 " " @size " " @size) )
+(def half-size (/ @size 2))
+(def half-size-10 (- half-size 10))
+(def translate-string (str "translate(" half-size "," half-size ")"))
+(def viewBox (str 0 " " 0 " " @size " " @size))
 
 (def ranks-radiuses (sq/ranks-radiuses @centerradius half-size-10))
 
@@ -77,14 +80,17 @@
                                                     (let [_ (println arr)
                                                           _ (println (to-board-pos (first arr)))
                                                           {:keys [x y]}
-                                                          (sq/whatxy ranks-radiuses (to-board-pos (first arr)))
+                                                          (->> arr
+                                                               first
+                                                               to-board-pos
+                                                               (sq/whatxy ranks-radiuses))
                                                           xlinkhref (pionek-url (second arr))
                                                           half-pionek-size (/ @pionek-size 2)]
-                                              {:x (- x half-pionek-size)
-                                               :y (- y half-pionek-size)
-                                               :xlinkHref xlinkhref
-                                               :on-click #(sq/click (to-board-pos (first arr)))}
-                                              )]) (into [] @main-board-figs))))
+                                                      {:x (- x half-pionek-size)
+                                                       :y (- y half-pionek-size)
+                                                       :xlinkHref xlinkhref
+                                                       :on-click #(sq/click (to-board-pos (first arr)))})])
+                                         (into [] @main-board-figs))))
 (def main-fig-images-fn-react (ra/run! (main-fig-images-fn) @main-board-figs))
 
 (defn main-board-pos [pos] (r/cursor main-board-figs [pos]))
@@ -97,8 +103,9 @@
 (defn some-component []
   [:div
    [:svg {:width @size :height @size :viewBox viewBox}
-    (into (into the-paths [[:text {:x 0 :y 0} "A kliknięte" (str @sq/clicked)]])
-          @main-fig-images) ]
+    (-> the-paths
+        (into [[:text {:x 0 :y 0} "A kliknięte" (str @sq/clicked)]])
+        (into @main-fig-images))]
    [:div {:style {:float :right}} "Kliknięte " (str @sq/clicked) (str (vec/addvec {:inward true} [1 1])) [:br]]])
 
 (defn init []
