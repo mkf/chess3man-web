@@ -24,7 +24,12 @@
   (let [inter-radius (- outer-radius center-radius)
         stroke-width (/ inter-radius 6)
         half-stroke-width (/ stroke-width 2)
-        ranks-radiuses (into [] (map #(+ center-radius half-stroke-width (* stroke-width (- 5 %))) (range 6)) )]
+        ranks-radiuses (->> 6
+                            range
+                            (map #(+ center-radius half-stroke-width (-> stroke-width
+                                                                         (* (-> 5
+                                                                                (- %))))))
+                            (into []))]
     {:center-radius center-radius
      :outer-radius outer-radius
      :inter-radius inter-radius
@@ -39,16 +44,16 @@
                                                                   a (+ a (/ pi 24))] [(sin a) (cos a)])))
 
 (defn paths-data [radius] (take 24 (iterate (fn [given] (let [now (inc (first given))]
-                                                                     [now (last given)
-                                                                      (segment-starting-coor (inc now) radius)]))
-                                                       [0 (segment-starting-coor 0 radius)
-                                                        (segment-starting-coor 1 radius)])))
+                                                          [now (last given)
+                                                           (segment-starting-coor (inc now) radius)]))
+                                            [0 (segment-starting-coor 0 radius)
+                                             (segment-starting-coor 1 radius)])))
 
 (defn paths-data-strings [radius] (map (fn [x] [(first x)
-                                                           (str "M" (first (second x)) "," (second (second x))
-                                                                " A" radius "," radius " 0 0 0 "
-                                                                (first (last x)) "," (second (last x)))])
-                                                  (paths-data radius)))
+                                                (str "M" (first (second x)) "," (second (second x))
+                                                     " A" radius "," radius " 0 0 0 "
+                                                     (first (last x)) "," (second (last x)))])
+                                       (paths-data radius)))
 
 (defn paths-rank [radius rank stroke-width pos-to-color]
   (map (fn [x] [:path {:d (second x) :fill "none"
@@ -56,10 +61,8 @@
                        :key (path-id [rank (first x)])
                        :stroke-width stroke-width
                        :stroke @(pos-to-color [rank (first x)])
-                       :on-click (fn [] (click [rank (first x)]) )}])
+                       :on-click (fn [] (click [rank (first x)]))}])
        (paths-data-strings radius)))
-
-
 
 (defn whatxy [ranks-radiuses board-pos]
   (let [;;inter-radius (- outer-radius center-radius)
@@ -75,8 +78,7 @@
         xy (segment-central-coor file radius)
         ;;angle (+ angle (/ pi 24))
         x (first xy)
-        y (second xy)
-        ] {:x x :y y}))
+        y (second xy)] {:x x :y y}))
 
 (defn paths
   ;;[center-radius outer-radius pos-to-color]
