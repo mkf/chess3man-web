@@ -7,7 +7,9 @@
             [clj3manchess.engine.board :as b]
             [clj3manchess.engine.fig :as f]
             [clj3manchess.engine.state :as st]
+            [clj3manchess.engine.move :as m]
             [schema.core :as s]
+            [cljs.reader :refer [read-string]]
             [chess3man-web.play.game.board.squares :as sq :refer [paths]]
             [promesa.core :as pr]
             [clj3manchess.online.client :as a]))
@@ -33,13 +35,13 @@
 (def main-board-rot (r/atom 3))
 (defn rot-board [col] (reset! main-board-rot (get rot-for-color col)))
 
-(defn to-game-file [board-file] (if board-rtl (- 24 (mod (- board-file @main-board-rot) 24))
+(defn to-game-file [board-file] (if board-rtl (mod (- 24 (mod (- board-file @main-board-rot) 24)) 24)
                                     (mod (- board-file @main-board-rot) 24)))
-(defn to-game-pos [pos] [(first pos) (to-game-file (second pos))])
+(defn to-game-pos [pos] (when pos [(first pos) (to-game-file (second pos))]))
 
 (defn to-board-file [game-file] (if board-rtl (to-game-file game-file)
                                     (mod (+ to-board-file @main-board-rot) 24)))
-(defn to-board-pos [pos] [(first pos) (to-board-file (second pos))])
+(defn to-board-pos [pos] (when pos [(first pos) (to-board-file (second pos))]))
 
 (def main-board-colors (r/atom (give-normal-colors true)))
 
@@ -106,34 +108,70 @@
                         (reset! state s)))
 (def state-id (r/atom nil))
 
-(def the-paths (vec (into [:g {:transform translate-string}] (concat (paths ranks-radiuses main-board-color)
-                                                                     (sq/creeks ranks-radiuses)
-                                                                     ))))
+(defn afters-exist? ([from to] (if (contains? @state :board)
+                                 (let [afters (m/generate-afters-set {:from from :to to :before @state})
+                                       afters (filter #(or (= % :no-promotion)
+                                                           (map? %)) afters)] (not (empty? afters)))))
+  ([from] #(afters-exist? from %)))
+(defn ourvftpgen [from] (filter (afters-exist? from) (get m/AMFT from)))
+(def prev-click (r/atom nil))
+(defn lightup [from] (do (println "lightup" from)
+                         (set-color (to-board-pos from) "#f00")
+                         (let [lis (ourvftpgen from)
+                               lis (map to-board-pos lis)
+                               _ (println lis)] (vec (for [x lis] (set-color x "#0e0"))))))
+(defn dimdown [] (do (println "dimmed")
+                     (set-normal-colors true)))
+(defn action [from to] (do (println "action" from to)))
+(defn clear-clicks-on-state-change [] (do (reset! prev-click nil)
+                                          (reset! @sq/clicked nil)))
+(def doubleclick (ra/run! (if-not @prev-click (when @sq/clicked (do (reset! prev-click @sq/clicked)
+                                                                     (lightup (to-game-pos @prev-click))))
+                                   (if @sq/clicked (do (action (to-game-pos @prev-click) (to-game-pos @sq/clicked)))
+                                       (do (reset! prev-click nil)
+                                           (dimdown)))) @sq/clicked))
+(defn the-paths [] (vec (into [:g {:transform translate-string}] (paths ranks-radiuses main-board-color))))
 (def state-id-entry (r/atom nil))
 (defn some-component []
   [:div
+   [:div
+    [:input {:id "stateentry"
+             :name "stateentry"
+             :type "number"
+             :required "true"
+             :value @state-id-entry
+             :on-change #(reset! state-id-entry (-> % .-target .-value))}]
+    [:button {:id "stateload"
+              :name "stateload"
+              :type "submit"
+              :on-click #(pr/then (a/get-gameplay-by-id @state-id-entry) set-state)} "Załaduj"]
+    [:br]
+    [:button {:id "newgame"
+              :name "newgame"
+              :type "submit"
+              :on-click #(do (println "newgameclick")
+                           (pr/then (a/newgame) (fn [{x :id :as xx}]
+                                                 (do
+                                                   (println xx)
+                                                   (when x
+                                                     (do (reset! state-id-entry x)
+                                                         (reset! state-id x)
+                                                         (pr/then (a/get-gameplay-by-id x) set-state)))))))} "Nowa gra"]
+    (str (when (contains? @state :board) (ourvftpgen [1 0])))]
    [:svg {:width @size :height @size :viewBox viewBox}
-    (-> the-paths
-        (into [[:text {:x 0 :y 0} "A kliknięte" (str @sq/clicked)]])
+    (-> (the-paths)
+        (into [[:text {:x 0 :y 0} "A kliknięte" (str (to-game-pos @sq/clicked))]])
         (into @main-fig-images)
+        (into (into [:g {:transform translate-string}] (sq/creeks ranks-radiuses)))
         (into (into [:g {:transform translate-string}] (vec (let [mts (sq/moats ranks-radiuses)]
                                                               (map mts @moats))))))]
    [:div {:style {:float :right}} "Kliknięte " (str @sq/clicked) [:br]
-    "A reszta stanu" (str (dissoc @state :board))
-    [:div
-           [:input {:id "stateentry"
-                          :name "stateentry"
-                          :type "number"
-                          :required "true"
-                          :value @state-id-entry
-                          :on-change #(reset! state-id-entry (-> % .-target .-value))}]
-           [:button {:id "stateload"
-                     :name "stateload"
-                     :type "submit"
-                     :on-click #(pr/then (a/get-gameplay-by-id @state-id-entry) set-state)} "Załaduj"]]]])
+    "A wcześniej" (str @prev-click) "A reszta stanu" (str (dissoc @state :board))
+    ]])
 
 (defn init []
   (r/render-component [some-component]
                       (.getElementById js/document "container"))
-  (set-state (assoc st/newgame :moats #{:white}))
+  ;;(set-state (assoc st/newgame :moats #{:white}))
+  ;;(set-color [4 5] "#020")
   (rot-board :white))
