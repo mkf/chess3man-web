@@ -100,22 +100,26 @@
 (defn main-put [pos what] (swap! main-board-figs b/put-onto-map-board pos what))
 (s/defn main-set [b :- b/Board] (reset! main-board-figs (b/fill-map-board b)))
 (def state (r/atom {}))
+(def moats (r/cursor state [:moats]))
 (defn set-state [s] (do (when (contains? s :board) (main-set (:board s)))
                         (reset! state s)))
 
-(def the-paths (vec (into [:g {:transform translate-string}] (paths ranks-radiuses main-board-color))))
-
+(def the-paths (vec (into [:g {:transform translate-string}] (concat (paths ranks-radiuses main-board-color)
+                                                                     (sq/creeks ranks-radiuses)
+                                                                     ))))
 (defn some-component []
   [:div
    [:svg {:width @size :height @size :viewBox viewBox}
     (-> the-paths
         (into [[:text {:x 0 :y 0} "A kliknięte" (str @sq/clicked)]])
-        (into @main-fig-images))]
+        (into @main-fig-images)
+        (into (into [:g {:transform translate-string}] (vec (let [mts (sq/moats ranks-radiuses)]
+                                                              (map mts @moats))))))]
    [:div {:style {:float :right}} "Kliknięte " (str @sq/clicked) [:br]
     "A reszta stanu" (str (dissoc @state :board))]])
 
 (defn init []
   (r/render-component [some-component]
                       (.getElementById js/document "container"))
-  (set-state st/newgame)
+  (set-state (assoc st/newgame :moats #{:white}))
   (rot-board :white))
