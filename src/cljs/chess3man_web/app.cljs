@@ -9,6 +9,7 @@
             [clj3manchess.engine.state :as st]
             [schema.core :as s]
             [chess3man-web.play.game.board.squares :as sq :refer [paths]]
+            [promesa.core :as pr]
             [clj3manchess.online.client :as a]))
             ;;[clj3manchess.engine.pos :refer [rank]]))
 
@@ -103,10 +104,12 @@
 (def moats (r/cursor state [:moats]))
 (defn set-state [s] (do (when (contains? s :board) (main-set (:board s)))
                         (reset! state s)))
+(def state-id (r/atom nil))
 
 (def the-paths (vec (into [:g {:transform translate-string}] (concat (paths ranks-radiuses main-board-color)
                                                                      (sq/creeks ranks-radiuses)
                                                                      ))))
+(def state-id-entry (r/atom nil))
 (defn some-component []
   [:div
    [:svg {:width @size :height @size :viewBox viewBox}
@@ -116,7 +119,18 @@
         (into (into [:g {:transform translate-string}] (vec (let [mts (sq/moats ranks-radiuses)]
                                                               (map mts @moats))))))]
    [:div {:style {:float :right}} "Kliknięte " (str @sq/clicked) [:br]
-    "A reszta stanu" (str (dissoc @state :board))]])
+    "A reszta stanu" (str (dissoc @state :board))
+    [:div
+           [:input {:id "stateentry"
+                          :name "stateentry"
+                          :type "number"
+                          :required "true"
+                          :value @state-id-entry
+                          :on-change #(reset! state-id-entry (-> % .-target .-value))}]
+           [:button {:id "stateload"
+                     :name "stateload"
+                     :type "submit"
+                     :on-click #(pr/then (a/get-gameplay-by-id @state-id-entry) set-state)} "Załaduj"]]]])
 
 (defn init []
   (r/render-component [some-component]
