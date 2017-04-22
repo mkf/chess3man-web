@@ -14,7 +14,7 @@
                  [binaryage/devtools "0.9.0" :scope "test"]
                  [binaryage/dirac "1.1.3" :scope "test"]
                  [powerlaces/boot-cljs-devtools "0.2.0" :scope "test"]
-                 [clj3manchess "0.1.0-SNAPSHOT"]])
+                 [clj3manchess "0.2.0-SNAPSHOT"]])
 
 (require
  '[adzerk.boot-cljs      :refer [cljs]]

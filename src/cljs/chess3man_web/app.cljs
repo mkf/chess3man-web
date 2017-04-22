@@ -6,8 +6,10 @@
             [clj3manchess.engine.vectors :as vec]
             [clj3manchess.engine.board :as b]
             [clj3manchess.engine.fig :as f]
+            [clj3manchess.engine.state :as st]
             [schema.core :as s]
-            [chess3man-web.play.game.board.squares :as sq :refer [paths]]))
+            [chess3man-web.play.game.board.squares :as sq :refer [paths]]
+            [clj3manchess.online.client :as a]))
             ;;[clj3manchess.engine.pos :refer [rank]]))
 
 (enable-console-print!)
@@ -97,6 +99,9 @@
 (defn main-get [pos] @(main-board-pos pos))
 (defn main-put [pos what] (swap! main-board-figs b/put-onto-map-board pos what))
 (s/defn main-set [b :- b/Board] (reset! main-board-figs (b/fill-map-board b)))
+(def state (r/atom {}))
+(defn set-state [s] (do (when (contains? s :board) (main-set (:board s)))
+                        (reset! state s)))
 
 (def the-paths (vec (into [:g {:transform translate-string}] (paths ranks-radiuses main-board-color))))
 
@@ -106,10 +111,11 @@
     (-> the-paths
         (into [[:text {:x 0 :y 0} "A kliknięte" (str @sq/clicked)]])
         (into @main-fig-images))]
-   [:div {:style {:float :right}} "Kliknięte " (str @sq/clicked) (str (vec/addvec {:inward true} [1 1])) [:br]]])
+   [:div {:style {:float :right}} "Kliknięte " (str @sq/clicked) [:br]
+    "A reszta stanu" (str (dissoc @state :board))]])
 
 (defn init []
   (r/render-component [some-component]
                       (.getElementById js/document "container"))
-  (main-set ::b/newgame)
+  (set-state st/newgame)
   (rot-board :white))
